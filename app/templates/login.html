@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Ingresar · Heartbeat{% endblock %}
+{% block content %}
+<article style="max-width: 26rem; margin: 3rem auto;">
+  <h2>Ingresar</h2>
+  {% if error %}<div class="errors">{{ error }}</div>{% endif %}
+  <form method="post" action="/login">
+    <label>Usuario <input name="username" autocomplete="username" required autofocus></label>
+    <label>Contraseña <input type="password" name="password" autocomplete="current-password" required></label>
+    <button type="submit">Entrar</button>
+  </form>
+</article>
+{% endblock %}

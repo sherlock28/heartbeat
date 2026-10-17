@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% from "_macros.html" import errors_box, status %}
+{% block title %}{{ vm.name if vm else "Nueva VM" }} · Heartbeat{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb"><ul>
+  <li><a href="/">Dashboard</a></li>
+  <li><a href="/clients/{{ product.client.id }}">{{ product.client.name }}</a></li>
+  <li><a href="/products/{{ product.id }}">{{ product.name }}</a></li>
+  <li>{{ vm.name if vm else "Nueva VM" }}</li>
+</ul></nav>
+
+{% if vm %}
+<div class="stats">
+  <article>Estado<strong style="font-size:1.2rem">{{ status(vm) }}</strong></article>
+  <article>Latencia<strong style="font-size:1.2rem">{{ "%.1f ms"|format(vm.last_latency_ms) if vm.last_latency_ms is not none else "—" }}</strong></article>
+  <article>Último chequeo<strong style="font-size:1rem">{{ vm.last_check_at|dt }}</strong></article>
+  <article>Último cambio<strong style="font-size:1rem">{{ vm.last_change_at|dt }}</strong></article>
+</div>
+{% if vm.last_error %}<p class="muted">Último error: <code>{{ vm.last_error }}</code></p>{% endif %}
+{% endif %}
+
+<div class="{{ 'split wide' if vm else 'split-form' }}">
+<div>
+<article class="form-card">
+  <header><strong>{{ "Editar VM" if vm else "Nueva VM" }}</strong></header>
+  {{ errors_box(errors) }}
+  <form class="compact" method="post" action="{{ '/vms/%d'|format(vm.id) if vm else '/products/%d/vms'|format(product.id) }}">
+    <div class="grid">
+      <label>Nombre <input name="name" value="{{ values.name or '' }}" placeholder="Ej: app-server-01" required></label>
+      <label>IP o hostname <input name="ip" value="{{ values.ip or '' }}" placeholder="10.0.0.15" required></label>
+    </div>
+    <label>Descripción <small class="muted">(opcional)</small>
+      <input name="description" value="{{ values.description or '' }}" placeholder="Ej: API + Front">
+    </label>
+    <div class="grid">
+      <label>Tipo de chequeo
+        <select name="check_type" id="check_type">
+          <option value="icmp" {{ "selected" if values.check_type == "icmp" }}>Ping (ICMP)</option>
+          <option value="tcp" {{ "selected" if values.check_type == "tcp" }}>Puerto TCP</option>
+        </select>
+      </label>
+      <label id="port_field">Puerto
+        <input type="number" name="port" min="1" max="65535" value="{{ values.port or '' }}" placeholder="22, 443, 3389…">
+      </label>
+    </div>
+    {% if vm %}<small class="muted">Usa TCP si la máquina tiene ICMP bloqueado por firewall (habitual en Windows y en la nube).</small>{% endif %}
+    <div class="form-foot">
+      <label><input type="checkbox" role="switch" name="enabled" value="true" {{ "checked" if values.enabled }}> Monitoreo activo</label>
+      <button type="submit">{{ "Guardar" if vm else "Registrar VM" }}</button>
+    </div>
+  </form>
+</article>
+
+{% if vm %}
+<details>
+  <summary class="muted">Zona de peligro</summary>
+  <form method="post" action="/vms/{{ vm.id }}/delete" onsubmit="return confirm('¿Eliminar esta VM y su historial?')">
+    <button class="secondary" style="background: var(--bad); border-color: var(--bad)">Eliminar VM</button>
+  </form>
+</details>
+{% endif %}
+</div>
+
+{% if vm %}
+<article>
+  <header><strong>📜 Historial de eventos</strong></header>
+  <form class="event-filter compact" hx-get="/vms/{{ vm.id }}/events" hx-trigger="change"
+        hx-target="#event-list" hx-swap="outerHTML">
+    <label>Desde <input type="datetime-local" name="desde" value="{{ filt.desde }}"></label>
+    <label>Hasta <input type="datetime-local" name="hasta" value="{{ filt.hasta }}"></label>
+    <button type="button" class="secondary outline"
+            onclick="this.form.reset(); htmx.trigger(this.form, 'change')">Limpiar</button>
+  </form>
+  {% include "_vm_events.html" %}
+</article>
+{% else %}
+<article class="help-card">
+  <header><strong>💡 ¿Qué tipo de chequeo uso?</strong></header>
+  <small>
+    <ol>
+      <li><b>Ping (ICMP)</b>: lo más simple; sirve si la máquina responde a ping.</li>
+      <li><b>Puerto TCP</b>: úsalo si el firewall bloquea ICMP (habitual en Windows y en la nube). Elige un puerto que la VM siempre tenga abierto, p. ej. <code>22</code> (SSH), <code>3389</code> (RDP) o <code>443</code> (HTTPS).</li>
+      <li>La VM se marca <b>caída</b> tras varios chequeos fallidos seguidos y se avisa a los canales del cliente; también se avisa cuando se recupera.</li>
+    </ol>
+  </small>
+</article>
+{% endif %}
+</div>
+
+<script>
+  const sel = document.getElementById("check_type"), port = document.getElementById("port_field");
+  const sync = () => { port.style.display = sel.value === "tcp" ? "" : "none"; };
+  sel.addEventListener("change", sync); sync();
+</script>
+{% endblock %}

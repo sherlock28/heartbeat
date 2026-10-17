@@ -1,0 +1,12 @@
+{% from "_macros.html" import vm_table, pager %}
+{% set url = "/products/%d/vms?q=%s&"|format(product.id, page.q|urlencode) %}
+<div id="vm-list" hx-get="{{ url }}page={{ page.page }}" hx-trigger="every 10s" hx-swap="outerHTML">
+  {% if page.items %}
+    {{ vm_table(page.items, show_errors=True, q=page.q) }}
+  {% elif page.q %}
+    <p class="muted">Ninguna VM coincide con «{{ page.q }}».</p>
+  {% else %}
+    <p class="muted">Sin VMs todavía.</p>
+  {% endif %}
+  {{ pager(page, url, "#vm-list", "VM(s)") }}
+</div>

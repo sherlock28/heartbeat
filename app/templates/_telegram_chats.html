@@ -1,0 +1,19 @@
+{% if error %}
+  <div class="errors">{{ error }}</div>
+{% elif not chats %}
+  <div class="errors">
+    El bot todavía no recibió mensajes. Abre el chat con tu bot en Telegram, envíale <code>/start</code>
+    (o agrégalo a un grupo y escribe algo) y vuelve a pulsar «Detectar chats».
+  </div>
+{% else %}
+  <small class="muted">Elige el chat donde llegarán los avisos:</small>
+  <div class="row-actions" style="margin-top:.4rem">
+    {% for c in chats %}
+      <button type="button" class="outline"
+              onclick="document.getElementById('telegram__chat_id').value='{{ c.id }}'; this.closest('#telegram_chats').innerHTML='<small>✔ Chat ID completado: {{ c.id }}</small>';">
+        {{ "👤" if c.type == "private" else "👥" if c.type in ("group", "supergroup") else "📢" }} {{ c.name }}
+        <small class="muted">({{ c.id }})</small>
+      </button>
+    {% endfor %}
+  </div>
+{% endif %}

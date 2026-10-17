@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% from "_macros.html" import errors_box %}
+{% block title %}{{ client.name if client else "Nuevo cliente" }} · Heartbeat{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb"><ul><li><a href="/">Dashboard</a></li><li>{{ client.name if client else "Nuevo cliente" }}</li></ul></nav>
+
+<div class="{{ 'split' if client }}">
+<div>
+<article class="form-card">
+  <header><strong>{{ "Editar cliente" if client else "Nuevo cliente" }}</strong></header>
+  {{ errors_box(errors) }}
+  <form class="compact" method="post" action="{{ '/clients/%d'|format(client.id) if client else '/clients' }}">
+    <label>Nombre <input name="name" value="{{ values.name or '' }}" required></label>
+    <label>Descripción <small class="muted">(opcional)</small>
+      <textarea name="description" rows="2">{{ values.description or '' }}</textarea>
+    </label>
+    <button type="submit">{{ "Guardar" if client else "Crear cliente" }}</button>
+  </form>
+</article>
+{% if client %}
+<details>
+  <summary class="muted">Zona de peligro</summary>
+  <form method="post" action="/clients/{{ client.id }}/delete" onsubmit="return confirm('¿Eliminar el cliente con todos sus productos, VMs y canales?')">
+    <button class="secondary" style="background: var(--bad); border-color: var(--bad)">Eliminar cliente</button>
+  </form>
+</details>
+{% endif %}
+</div>
+
+{% if client %}
+<div>
+<article>
+  <header class="section-head">
+    <strong>📦 Productos</strong>
+    <a href="/clients/{{ client.id }}/products/new" role="button" class="outline">+ Producto</a>
+  </header>
+  {% include "_client_products.html" %}
+</article>
+
+<article>
+  <header class="section-head">
+    <strong>🔔 Canales de notificación</strong>
+    <a href="/clients/{{ client.id }}/channels/new" role="button" class="outline">+ Canal</a>
+  </header>
+  {% include "_client_channels.html" %}
+</article>
+</div>
+{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,3 @@
+{% from "_macros.html" import status_summary %}
+<span id="client-status-{{ client.id }}" class="status-sum" hx-get="/partials/clients/{{ client.id }}/status"
+      hx-trigger="every 10s" hx-swap="outerHTML">{% if vms %}{{ status_summary(vms) }}{% endif %}</span>

@@ -1,0 +1,22 @@
+{% from "_macros.html" import pager %}
+{% set url = "/clients/%d/channels/list?"|format(client.id) %}
+<div id="channel-list">
+  {% if channels.items %}
+  <div class="table-wrap"><table class="striped">
+    <thead><tr><th>Nombre</th><th>Integración</th><th>Estado</th><th></th></tr></thead>
+    <tbody>
+    {% for ch in channels.items %}
+      <tr>
+        <td><a href="/channels/{{ ch.id }}">{{ ch.name }}</a></td>
+        <td>{{ notifier_types.get(ch.type, ch.type) }}</td>
+        <td>{{ "Activo" if ch.enabled else "Desactivado" }}</td>
+        <td class="row-actions">
+          <form method="post" action="/channels/{{ ch.id }}/test"><button class="secondary outline">Enviar prueba</button></form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}<p class="muted">Sin canales: las caídas de este cliente no se notificarán.</p>{% endif %}
+  {{ pager(channels, url, "#channel-list", "canal(es)") }}
+</div>

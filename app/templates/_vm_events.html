@@ -1,0 +1,23 @@
+{% from "_macros.html" import pager %}
+{% set url = "/vms/%d/events?desde=%s&hasta=%s&"|format(vm.id, filt.desde|urlencode, filt.hasta|urlencode) %}
+<div id="event-list" hx-get="{{ url }}page={{ events.page }}" hx-trigger="every 10s" hx-swap="outerHTML">
+  {% if filt.error %}
+  <div class="errors">{{ filt.error }}</div>
+  {% elif events.items %}
+  <div class="table-wrap"><table class="striped">
+    <thead><tr><th>Fecha</th><th>Evento</th><th>Detalle</th><th>Notificado</th></tr></thead>
+    <tbody>
+    {% for e in events.items %}
+      <tr>
+        <td>{{ e.at|dt }}</td>
+        <td>{% if e.kind == "down" %}<span class="dot down"></span>Caída{% else %}<span class="dot up"></span>Recuperada{% endif %}</td>
+        <td class="muted">{{ e.detail or "" }}</td>
+        <td>{{ "✔" if e.notified else "—" }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% elif filt.active %}<p class="muted">No hay eventos en ese rango de fechas.</p>
+  {% else %}<p class="muted">Sin eventos todavía.</p>{% endif %}
+  {{ pager(events, url, "#event-list", "evento(s) en el rango" if filt.active else "evento(s)") }}
+</div>

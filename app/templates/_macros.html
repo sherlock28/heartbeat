@@ -1,0 +1,64 @@
+{% macro status(vm) -%}
+  {%- if not vm.enabled -%}<span class="dot paused"></span>Pausada
+  {%- elif vm.status == "up" -%}<span class="dot up"></span>Activa
+  {%- elif vm.status == "down" -%}<span class="dot down"></span><strong>Caída</strong>
+  {%- else -%}<span class="dot unknown"></span>Pendiente
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro status_summary(vms) -%}
+  {%- set paused = vms|rejectattr("enabled")|list -%}
+  {%- set active = vms|selectattr("enabled")|list -%}
+  {%- set up = active|selectattr("status", "equalto", "up")|list -%}
+  {%- set down = active|selectattr("status", "equalto", "down")|list -%}
+  {%- set pending = active|selectattr("status", "equalto", "unknown")|list -%}
+  {%- if down %}<span title="{{ down|map(attribute='name')|join(', ') }}"><span class="dot down"></span><strong>{{ down|length }} caída(s)</strong></span>{% endif -%}
+  {%- if up %}<span title="{{ up|map(attribute='name')|join(', ') }}"><span class="dot up"></span>{{ up|length }} activa(s)</span>{% endif -%}
+  {%- if pending %}<span title="{{ pending|map(attribute='name')|join(', ') }}"><span class="dot unknown"></span>{{ pending|length }} pendiente(s)</span>{% endif -%}
+  {%- if paused %}<span title="{{ paused|map(attribute='name')|join(', ') }}"><span class="dot paused"></span>{{ paused|length }} pausada(s)</span>{% endif -%}
+  {%- if not vms %}<span class="muted">—</span>{% endif -%}
+{%- endmacro %}
+
+{% macro errors_box(errors) -%}
+  {% if errors %}<div class="errors"><ul style="margin:0">{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
+{%- endmacro %}
+
+{% macro vm_table(vms, show_errors=False, q=None) -%}
+<div class="table-wrap">
+<table class="striped">
+  <thead><tr><th>Estado</th><th>Máquina</th><th>IP / Host</th><th>Chequeo</th><th>Latencia</th><th>Último cambio</th>{% if show_errors %}<th>Detalle</th>{% endif %}</tr></thead>
+  <tbody>
+  {% for vm in vms %}
+    <tr>
+      <td>{{ status(vm) }}</td>
+      <td><a href="/vms/{{ vm.id }}">{{ vm.name|highlight(q) }}</a>{% if vm.description %}<br><small class="muted">{{ vm.description }}</small>{% endif %}</td>
+      <td><code>{{ vm.ip|highlight(q) }}</code></td>
+      <td><span class="badge">{{ vm.check_label }}</span></td>
+      <td>{{ "%.1f ms"|format(vm.last_latency_ms) if vm.last_latency_ms is not none else "—" }}</td>
+      <td>{% if vm.last_change_at %}hace {{ vm.last_change_at|since }}{% else %}—{% endif %}</td>
+      {% if show_errors %}<td class="err muted">{{ vm.last_error or "" }}</td>{% endif %}
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{%- endmacro %}
+
+
+{# Pie de tabla paginada. `url` ya incluye "?" y los filtros; se le agrega page=N. #}
+{% macro pager(page, url, target, noun) -%}
+  {% if page.total %}
+  <div class="pager">
+    <small class="muted">{{ page.start }}–{{ page.end }} de {{ page.total }} {{ noun }}{% if page.q %} que coinciden{% endif %}</small>
+    {% if page.pages > 1 %}
+    <div class="row-actions">
+      <a role="button" class="outline secondary {{ 'disabled' if page.page <= 1 }}"
+         hx-get="{{ url }}page={{ page.page - 1 }}" hx-target="{{ target }}" hx-swap="outerHTML">‹ Anterior</a>
+      <small>Página {{ page.page }} de {{ page.pages }}</small>
+      <a role="button" class="outline secondary {{ 'disabled' if page.page >= page.pages }}"
+         hx-get="{{ url }}page={{ page.page + 1 }}" hx-target="{{ target }}" hx-swap="outerHTML">Siguiente ›</a>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+{%- endmacro %}

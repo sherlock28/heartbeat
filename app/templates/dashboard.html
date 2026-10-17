@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="section-head">
+  <h2>Estado de las máquinas</h2>
+  <div class="row-actions">
+    <button type="button" class="secondary outline" onclick="setAllCollapsed(false)">Expandir todo</button>
+    <button type="button" class="secondary outline" onclick="setAllCollapsed(true)">Colapsar todo</button>
+    <a href="/clients/new" role="button">+ Nuevo cliente</a>
+  </div>
+</div>
+{% include "_tree.html" %}
+{% endblock %}

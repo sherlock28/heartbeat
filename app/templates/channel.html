@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% from "_macros.html" import errors_box %}
+{% block title %}{{ channel.name if channel else "Nuevo canal" }} · Heartbeat{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb"><ul>
+  <li><a href="/">Dashboard</a></li>
+  <li><a href="/clients/{{ client.id }}">{{ client.name }}</a></li>
+  <li>{{ channel.name if channel else "Nuevo canal" }}</li>
+</ul></nav>
+
+<div class="split-form">
+<div>
+<article class="form-card">
+  <header><strong>{{ "Editar canal" if channel else "Nuevo canal de notificación" }}</strong></header>
+  {{ errors_box(errors) }}
+  <form class="compact" method="post" action="{{ '/channels/%d'|format(channel.id) if channel else '/clients/%d/channels'|format(client.id) }}">
+    <div class="grid">
+      <label>Nombre <input name="name" value="{{ values.name or '' }}" placeholder="Ej: Mi Telegram" required></label>
+      <label>Integración
+        <select name="type" id="channel_type">
+          {% for key, n in notifiers.items() %}
+            <option value="{{ key }}" {{ "selected" if values.type == key }}>{{ n.label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+
+    {% for key, n in notifiers.items() %}
+    <fieldset class="notifier-fields" data-type="{{ key }}">
+      {% for f in n.fields %}
+        {% set current = values.config.get(f.name, '') if values.type == key else '' %}
+        {% set fid = key ~ "__" ~ f.name %}
+        <label for="{{ fid }}">{{ f.label }}</label>
+        {% set input %}<input name="{{ fid }}" id="{{ fid }}" value="{{ current }}"
+               type="{{ 'password' if f.secret else 'text' }}" placeholder="{{ f.placeholder }}"
+               autocomplete="off" required>{% endset %}
+        {% if key == "telegram" and f.name == "chat_id" %}
+          <div class="input-action">
+            {{ input }}
+            <button type="button" class="secondary outline"
+                    hx-post="/channels/telegram/chats" hx-include="#telegram__bot_token"
+                    hx-target="#telegram_chats" hx-indicator="#telegram_chats">🔍 Detectar</button>
+          </div>
+        {% else %}
+          {{ input }}
+        {% endif %}
+        {% if f.help %}<small class="muted">{{ f.help }}</small>{% endif %}
+      {% endfor %}
+      {% if key == "telegram" %}<div id="telegram_chats" style="margin-bottom: .8rem"></div>{% endif %}
+    </fieldset>
+    {% endfor %}
+
+    <div class="form-foot">
+      <label><input type="checkbox" role="switch" name="enabled" value="true" {{ "checked" if values.enabled }}> Activo</label>
+      <button type="submit">{{ "Guardar" if channel else "Crear canal" }}</button>
+    </div>
+  </form>
+</article>
+
+{% if channel %}
+<div class="row-actions">
+  <form method="post" action="/channels/{{ channel.id }}/test"><button class="secondary outline">Enviar prueba</button></form>
+  <form method="post" action="/channels/{{ channel.id }}/delete" onsubmit="return confirm('¿Eliminar este canal?')">
+    <button class="secondary" style="background: var(--bad); border-color: var(--bad)">Eliminar canal</button>
+  </form>
+</div>
+{% endif %}
+</div>
+
+{% for key, n in notifiers.items() %}
+  {% if n.help_html %}
+  <article class="help-card notifier-help" data-type="{{ key }}">
+    <header><strong>💡 Cómo configurar {{ n.label }}</strong></header>
+    <small>{{ n.help_html|safe }}</small>
+  </article>
+  {% endif %}
+{% endfor %}
+</div>
+
+<script>
+  // Muestra solo los campos y la ayuda de la integración elegida; los campos ocultos se deshabilitan para no enviarse ni validarse
+  const typeSel = document.getElementById("channel_type");
+  const syncFields = () => {
+    document.querySelectorAll(".notifier-fields").forEach(fs => {
+      const active = fs.dataset.type === typeSel.value;
+      fs.hidden = !active;
+      fs.disabled = !active;
+    });
+    document.querySelectorAll(".notifier-help").forEach(el => { el.hidden = el.dataset.type !== typeSel.value; });
+  };
+  typeSel.addEventListener("change", syncFields);
+  syncFields();
+</script>
+{% endblock %}

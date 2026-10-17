@@ -1,0 +1,6 @@
+<div id="stats" class="stats" hx-get="/partials/stats" hx-trigger="every 10s" hx-swap="outerHTML">
+  <article><span class="dot up"></span>Activas<strong>{{ stats.up }}</strong></article>
+  <article><span class="dot down"></span>Caídas<strong>{{ stats.down }}</strong></article>
+  <article><span class="dot unknown"></span>Pendientes<strong>{{ stats.unknown }}</strong></article>
+  <article><span class="dot paused"></span>Pausadas<strong>{{ stats.paused }}</strong></article>
+</div>

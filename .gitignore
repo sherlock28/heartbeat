@@ -1,0 +1,50 @@
+# --- Secretos y configuración local ---
+# .env tiene la contraseña del panel y SECRET_KEY; solo se sube la plantilla
+.env
+.env.*
+!.env.example
+
+# --- Datos en vivo ---
+# Base SQLite con clientes, VMs, eventos y los tokens/webhooks de los canales
+data/
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+*.bak
+*.backup
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# --- Entornos virtuales ---
+.venv/
+venv/
+env/
+
+# --- Tests y herramientas ---
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# --- Docker ---
+docker-compose.override.yml
+
+# --- Editores y sistema operativo ---
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Logs ---
+*.log

@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Heartbeat{% endblock %}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2.0.6/css/pico.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.4/dist/htmx.min.js"></script>
+  <style>
+    :root { --ok: #2e9d5b; --bad: #d33c3c; --idle: #8a919e; }
+    /* Contenedor más ancho que el de Pico (1450px) para achicar los márgenes laterales en pantallas grandes */
+    @media (min-width: 1280px) { .container { max-width: min(1700px, calc(100% - 4rem)); } }
+    body > main { padding-top: 1rem; }
+    nav .brand { font-weight: 700; text-decoration: none; }
+    .dot { display: inline-block; width: .7rem; height: .7rem; border-radius: 50%; margin-right: .35rem; vertical-align: middle; }
+    .dot.up { background: var(--ok); }
+    .dot.down { background: var(--bad); box-shadow: 0 0 0 3px color-mix(in srgb, var(--bad) 25%, transparent); }
+    .dot.unknown, .dot.paused { background: var(--idle); }
+    .badge { font-size: .8rem; padding: .1rem .5rem; border-radius: 1rem; border: 1px solid var(--pico-muted-border-color); white-space: nowrap; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .stats article { margin: 0; padding: .9rem 1rem; }
+    .stats strong { font-size: 1.6rem; display: block; }
+    .flash { padding: .75rem 1rem; border-radius: var(--pico-border-radius); margin-bottom: 1rem; border-left: 4px solid var(--ok); background: var(--pico-card-background-color); }
+    .flash.error, .errors { border-left-color: var(--bad); }
+    .errors { padding: .75rem 1rem; border-left: 4px solid var(--bad); margin-bottom: 1rem; background: var(--pico-card-background-color); }
+    .muted { color: var(--pico-muted-color); }
+    .row-actions { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+    .row-actions form { margin: 0; }
+    .row-actions button, .row-actions [role=button] { margin: 0; padding: .35rem .8rem; font-size: .85rem; }
+    .section-head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    .table-wrap { overflow-x: auto; }
+    td.err { max-width: 22rem; font-size: .85rem; }
+    h6.product { margin: 1rem 0 .4rem; }
+    /* Formularios compactos */
+    article.form-card { max-width: 34rem; }
+    .compact { --pico-form-element-spacing-vertical: .45rem; --pico-form-element-spacing-horizontal: .7rem; }
+    .compact label { margin-bottom: .2rem; }
+    .compact input:not([type=checkbox], [type=radio]), .compact textarea, .compact select { margin-bottom: .8rem; }
+    .compact button[type=submit] { width: auto; padding: .45rem 1.4rem; margin-bottom: 0; }
+    /* Vistas cliente y producto: formulario a la izquierda, tablas a la derecha */
+    .split { display: grid; grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
+    .split > * > article { margin-top: 0; }
+    .split.wide { grid-template-columns: minmax(0, 34rem) minmax(0, 1fr); }
+    .split.wide article.form-card { max-width: none; }
+    @media (max-width: 900px) { .split, .split.wide { grid-template-columns: 1fr; } }
+    /* Vista canal: formulario + panel de ayuda al costado */
+    .split-form { display: grid; grid-template-columns: minmax(0, 38rem) minmax(16rem, 26rem); gap: 1.5rem; align-items: start; }
+    .split-form article { margin-top: 0; }
+    .split-form article.form-card { max-width: none; }
+    @media (max-width: 900px) { .split-form { grid-template-columns: 1fr; } }
+    .help-card ol { padding-left: 1.2rem; margin-bottom: 0; }
+    .help-card li { margin-bottom: .5rem; }
+    .compact fieldset { margin-bottom: 0; }
+    /* Campo con botón al lado: misma altura que el input y separado por un espacio */
+    .input-action { display: flex; gap: .5rem; align-items: stretch; margin-bottom: .8rem; }
+    .compact .input-action input { flex: 1; margin: 0; }
+    .input-action button { flex: none; width: auto; margin: 0; padding: 0 1rem; font-size: .9rem; white-space: nowrap; }
+    .form-foot { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-top: .4rem; }
+    .form-foot label { margin: 0; }
+    .event-filter { display: flex; gap: .75rem; align-items: end; flex-wrap: wrap; margin-bottom: .75rem; }
+    .event-filter label { flex: 1 1 12rem; margin: 0; }
+    .compact.event-filter input { margin-bottom: 0; }
+    .event-filter button { margin: 0; padding: .45rem 1rem; }
+    /* Secciones colapsables del dashboard (cliente y producto) */
+    details.collapse { margin: 0; padding: 0; border: 0; }
+    details.collapse > summary { display: flex; align-items: center; gap: .75rem; }
+    details.collapse > summary::after { float: none; flex: none; margin: 0; order: -1; }
+    details.collapse > summary .summary-main { flex: 1; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    .summary-meta { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+    details.client-block > summary {
+      margin: calc(var(--pico-block-spacing-vertical) * -1) calc(var(--pico-block-spacing-horizontal) * -1) var(--pico-block-spacing-vertical);
+      padding: calc(var(--pico-block-spacing-vertical) * .66) var(--pico-block-spacing-horizontal);
+      background-color: var(--pico-card-sectioning-background-color);
+      border-bottom: var(--pico-border-width) solid var(--pico-card-border-color);
+      border-radius: var(--pico-border-radius) var(--pico-border-radius) 0 0;
+    }
+    details.client-block:not([open]) > summary { margin-bottom: calc(var(--pico-block-spacing-vertical) * -1); border-bottom: 0; border-radius: var(--pico-border-radius); }
+    details.product-block { margin-top: 1rem; }
+    details.product-block > summary { margin-bottom: .4rem; }
+    .status-sum { display: flex; gap: .75rem; flex-wrap: wrap; white-space: nowrap; }
+    .vm-search { display: flex; gap: .75rem; align-items: center; margin-bottom: .75rem; }
+    .vm-search input { margin: 0; --pico-form-element-spacing-vertical: .4rem; }
+    .vm-search small { white-space: nowrap; }
+    mark { padding: 0 .1rem; }
+    .pager { display: flex; justify-content: space-between; align-items: center; gap: .5rem; margin-top: .5rem; }
+    .pager [role=button] { padding: .3rem .8rem; font-size: .85rem; margin: 0; }
+    .pager .disabled { opacity: .4; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <header class="container">
+    <nav>
+      <ul><li><a href="/" class="brand">💓 Heartbeat</a></li></ul>
+      {% if user %}
+      <ul>
+        <li><a href="/">Dashboard</a></li>
+        <li><a href="/clients/new">+ Cliente</a></li>
+        <li><form method="post" action="/logout" style="margin:0"><button class="secondary outline" style="padding:.3rem .8rem;margin:0">Salir</button></form></li>
+      </ul>
+      {% endif %}
+    </nav>
+  </header>
+  <main class="container">
+    {% if flash %}<div class="flash {{ flash.kind }}">{{ flash.message }}</div>{% endif %}
+    {% block content %}{% endblock %}
+  </main>
+  <script>
+    // Recuerda qué secciones colapsó el usuario (por navegador). htmx.onLoad también corre tras cada refresco parcial.
+    const COLLAPSE_KEY = "heartbeat:collapsed";
+    const loadCollapsed = () => { try { return JSON.parse(localStorage.getItem(COLLAPSE_KEY)) || {}; } catch { return {}; } };
+    const saveCollapsed = (state) => { try { localStorage.setItem(COLLAPSE_KEY, JSON.stringify(state)); } catch {} };
+    htmx.onLoad((root) => {
+      const state = loadCollapsed();
+      const sel = "details[data-collapse-key]";
+      const els = [...(root.matches?.(sel) ? [root] : []), ...(root.querySelectorAll?.(sel) || [])];
+      els.forEach((el) => { el.open = !state[el.dataset.collapseKey]; });
+    });
+    document.addEventListener("toggle", (e) => {
+      const key = e.target.dataset?.collapseKey;
+      if (!key) return;
+      const state = loadCollapsed();
+      if (e.target.open) delete state[key]; else state[key] = true;
+      saveCollapsed(state);
+    }, true);
+    function setAllCollapsed(collapsed) {
+      document.querySelectorAll("details[data-collapse-key]").forEach((el) => { el.open = !collapsed; });
+    }
+  </script>
+</body>
+</html>

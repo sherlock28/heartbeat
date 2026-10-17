@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% from "_macros.html" import errors_box %}
+{% block title %}{{ product.name if product else "Nuevo producto" }} · Heartbeat{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb"><ul>
+  <li><a href="/">Dashboard</a></li>
+  <li><a href="/clients/{{ client.id }}">{{ client.name }}</a></li>
+  <li>{{ product.name if product else "Nuevo producto" }}</li>
+</ul></nav>
+
+<div class="{{ 'split' if product }}">
+<div>
+<article class="form-card">
+  <header><strong>{{ "Editar producto" if product else "Nuevo producto" }}</strong></header>
+  {{ errors_box(errors) }}
+  <form class="compact" method="post" action="{{ '/products/%d'|format(product.id) if product else '/clients/%d/products'|format(client.id) }}">
+    <label>Nombre <input name="name" value="{{ values.name or '' }}" placeholder="Ej: Portal de clientes" required></label>
+    <label>Descripción <small class="muted">(opcional)</small>
+      <textarea name="description" rows="2">{{ values.description or '' }}</textarea>
+    </label>
+    <button type="submit">{{ "Guardar" if product else "Crear producto" }}</button>
+  </form>
+</article>
+
+{% if product %}
+<details>
+  <summary class="muted">Zona de peligro</summary>
+  <form method="post" action="/products/{{ product.id }}/delete" onsubmit="return confirm('¿Eliminar el producto y todas sus VMs?')">
+    <button class="secondary" style="background: var(--bad); border-color: var(--bad)">Eliminar producto</button>
+  </form>
+</details>
+{% endif %}
+</div>
+
+{% if product %}
+<article>
+  <header class="section-head">
+    <strong>🖥️ Máquinas virtuales</strong>
+    <a href="/products/{{ product.id }}/vms/new" role="button" class="outline">+ VM</a>
+  </header>
+  <div class="vm-search">
+    <input type="search" id="vm-q" name="q" value="{{ page.q }}" placeholder="Buscar por nombre o IP…" autocomplete="off"
+           aria-label="Buscar VM"
+           hx-get="/products/{{ product.id }}/vms" hx-trigger="input changed delay:250ms, search"
+           hx-target="#vm-list" hx-swap="outerHTML">
+  </div>
+  {% include "_product_vms.html" %}
+</article>
+{% endif %}
+</div>
+{% endblock %}

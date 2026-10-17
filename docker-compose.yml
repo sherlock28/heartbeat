@@ -1,0 +1,13 @@
+services:
+  heartbeat:
+    build: .
+    container_name: heartbeat
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/data
+    # Si las VMs solo son alcanzables desde la red del host (VPN, rutas propias),
+    # descomenta esto y quita "ports" (el panel quedará en el puerto 8000 del host):
+    # network_mode: host

@@ -1,0 +1,33 @@
+<div id="tree">
+  {% include "_stats.html" %}
+
+  {% for client in clients %}
+  <article>
+  <details class="collapse client-block" data-collapse-key="client-{{ client.id }}" open>
+    <summary>
+      <span class="summary-main">
+        <a href="/clients/{{ client.id }}"><strong>👤 {{ client.name }}</strong></a>
+        <small class="summary-meta">
+          {% with vms = client_vms_map[client.id] %}{% include "_client_status.html" %}{% endwith %}
+          <span class="muted">
+            {{ client.products|length }} producto(s) ·
+            {% set active_channels = client.channels|selectattr("enabled")|list %}
+            {% if active_channels %}🔔 {{ active_channels|length }} canal(es){% else %}⚠️ sin canal de avisos{% endif %}
+          </span>
+        </small>
+      </span>
+    </summary>
+    {% for product in client.products %}
+      {% with vms = vm_pages[product.id] %}{% include "_dash_vms.html" %}{% endwith %}
+    {% else %}
+      <p class="muted">Sin productos. <a href="/clients/{{ client.id }}/products/new">Agregar producto</a></p>
+    {% endfor %}
+  </details>
+  </article>
+  {% else %}
+  <article>
+    <p>Todavía no hay clientes registrados.</p>
+    <a href="/clients/new" role="button">Crear el primero</a>
+  </article>
+  {% endfor %}
+</div>

@@ -1,0 +1,19 @@
+{% from "_macros.html" import status_summary, pager %}
+{% set url = "/clients/%d/products/list?"|format(client.id) %}
+<div id="product-list" hx-get="{{ url }}page={{ products.page }}" hx-trigger="every 10s" hx-swap="outerHTML">
+  {% if products.items %}
+  <div class="table-wrap"><table class="striped">
+    <thead><tr><th>Producto</th><th>VMs</th><th>Estado</th></tr></thead>
+    <tbody>
+    {% for p in products.items %}
+      <tr>
+        <td><a href="/products/{{ p.id }}">{{ p.name }}</a>{% if p.description %}<br><small class="muted">{{ p.description }}</small>{% endif %}</td>
+        <td>{{ p.vms|length }}</td>
+        <td><div class="status-sum">{{ status_summary(p.vms) }}</div></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}<p class="muted">Sin productos todavía.</p>{% endif %}
+  {{ pager(products, url, "#product-list", "producto(s)") }}
+</div>

@@ -1,0 +1,18 @@
+{% from "_macros.html" import vm_table, pager, status_summary %}
+{% set url = "/partials/products/%d/vms?"|format(product.id) %}
+{% set target = "#dash-vms-%d"|format(product.id) %}
+<details id="dash-vms-{{ product.id }}" class="collapse product-block" data-collapse-key="product-{{ product.id }}" open
+         hx-get="{{ url }}page={{ vms.page }}" hx-trigger="every 10s" hx-swap="outerHTML">
+  <summary>
+    <span class="summary-main">
+      <strong>📦 <a href="/products/{{ product.id }}">{{ product.name }}</a></strong>
+      {% if vms.total %}<small class="status-sum">{{ status_summary(product.vms) }}</small>{% endif %}
+    </span>
+  </summary>
+  {% if vms.items %}
+    {{ vm_table(vms.items) }}
+    {{ pager(vms, url, target, "VM(s)") }}
+  {% else %}
+    <p class="muted">Sin VMs. <a href="/products/{{ product.id }}/vms/new">Agregar VM</a></p>
+  {% endif %}
+</details>
