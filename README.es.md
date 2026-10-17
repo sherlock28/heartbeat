@@ -26,6 +26,7 @@ Hecho con FastAPI, SQLite y HTMX, y empaquetado en **un único contenedor Docker
 - [Agregar una integración](#agregar-una-integración)
 - [Estructura del proyecto](#estructura-del-proyecto)
 - [Próximos pasos](#próximos-pasos)
+- [Licencia](#licencia)
 
 ---
 
@@ -296,3 +297,7 @@ tests/                 # tests con pytest
 - [ ] **Servicios** dentro de cada VM: chequeos HTTP o TCP por servicio, con el mismo motor y las mismas integraciones.
 - [ ] Más integraciones (Slack, Microsoft Teams, e-mail).
 - [ ] Historial y gráficos de latencia por VM.
+
+## Licencia
+
+Publicado bajo la [licencia MIT](LICENSE).

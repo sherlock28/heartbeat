@@ -26,6 +26,7 @@ Built with FastAPI, SQLite and HTMX, and shipped as a **single Docker container*
 - [Adding a new integration](#adding-a-new-integration)
 - [Project structure](#project-structure)
 - [Roadmap](#roadmap)
+- [License](#license)
 
 ---
 
@@ -296,3 +297,7 @@ tests/                 # pytest suite
 - [ ] **Services** under each VM: HTTP or TCP checks per service, using the same engine and notifiers.
 - [ ] More integrations (Slack, Microsoft Teams, e-mail).
 - [ ] Latency history and charts per VM.
+
+## License
+
+Released under the [MIT License](LICENSE).
